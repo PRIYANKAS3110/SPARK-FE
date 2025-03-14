@@ -1,8 +1,8 @@
 import React, { ReactNode } from 'react';
-import { Box, AppBar, Toolbar, Typography, IconButton, Avatar, InputBase, Badge, useTheme, alpha } from '@mui/material';
+import { Box, AppBar, Toolbar, Typography, useTheme, alpha } from '@mui/material';
+import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
-import SearchIcon from '@mui/icons-material/Search';
-import NotificationsIcon from '@mui/icons-material/Notifications';
+import FlareIcon from '@mui/icons-material/Flare'; 
 import Sidebar from './Sidebar';
 
 interface LayoutProps {
@@ -17,7 +17,7 @@ const Layout = ({ children }: LayoutProps) => {
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       {/* Sidebar */}
       <Sidebar />
-      
+     
       {/* Main Content */}
       <Box
         component="main"
@@ -30,9 +30,9 @@ const Layout = ({ children }: LayoutProps) => {
         }}
       >
         {/* App Bar */}
-        <AppBar 
-          position="fixed" 
-          color="default" 
+        <AppBar
+          position="fixed"
+          color="default"
           elevation={0}
           sx={{
             width: { sm: `calc(100% - ${drawerWidth}px)` },
@@ -42,76 +42,49 @@ const Layout = ({ children }: LayoutProps) => {
             borderBottom: `1px solid ${theme.palette.divider}`,
           }}
         >
-          <Toolbar>
+          <Toolbar sx={{ justifyContent: 'center' }}>
+            {/* Mobile menu button - positioned at the start */}
             <IconButton
               edge="start"
               color="inherit"
               aria-label="menu"
-              sx={{ mr: 2, display: { sm: 'none' } }}
+              sx={{ 
+                mr: 2, 
+                display: { sm: 'none' },
+                position: 'absolute',
+                left: theme.spacing(2)
+              }}
             >
               <MenuIcon />
             </IconButton>
             
-            <Box sx={{ 
-              position: 'relative',
-              borderRadius: theme.shape.borderRadius,
-              backgroundColor: alpha(theme.palette.common.black, 0.04),
-              '&:hover': {
-                backgroundColor: alpha(theme.palette.common.black, 0.07),
-              },
-              width: { xs: '100%', sm: 'auto' },
-              mr: 2
-            }}>
-              <Box sx={{ 
-                padding: theme.spacing(0, 2),
-                height: '100%',
-                position: 'absolute',
-                pointerEvents: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <SearchIcon />
-              </Box>
-              <InputBase
-                placeholder="Search jobs, companies..."
-                sx={{
-                  color: 'inherit',
-                  padding: theme.spacing(1, 1, 1, 0),
-                  paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-                  transition: theme.transitions.create('width'),
-                  width: { xs: '100%', sm: '18ch', md: '30ch' },
-                  '&:focus': {
-                    width: { sm: '24ch', md: '42ch' },
-                  },
-                }}
-              />
-            </Box>
-            
-            <Box sx={{ flexGrow: 1 }} />
-            
+            {/* SPARK Logo and Name - centered */}
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton color="inherit" sx={{ mr: 2 }}>
-                <Badge badgeContent={4} color="error">
-                  <NotificationsIcon />
-                </Badge>
-              </IconButton>
-              
-              <Avatar 
+              <FlareIcon 
                 sx={{ 
-                  width: 38, 
-                  height: 38,
-                  cursor: 'pointer',
-                  border: `2px solid ${theme.palette.primary.main}` 
-                }}
+                  color: theme.palette.primary.main, 
+                  fontSize: 28, 
+                  mr: 1 
+                }} 
               />
+              <Typography 
+                variant="h6" 
+                component="div" 
+                sx={{ 
+                  fontWeight: 700, 
+                  letterSpacing: 1,
+                  color: theme.palette.primary.main 
+                }}
+              >
+                SPARK - Smart Prediction & Analysis for Recruitment Knowledge
+              </Typography>
             </Box>
           </Toolbar>
         </AppBar>
-        
+       
         {/* Toolbar spacer */}
         <Toolbar />
-        
+       
         {/* Page content */}
         <Box sx={{ py: 3 }}>
           {children}
