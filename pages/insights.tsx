@@ -117,7 +117,7 @@ export default function RoadmapPage() {
   const renderRoadmap = () => {
     if (!roadmap) return null;
     
-    const parseRoadmap = (text) => {
+    const parseRoadmap = (text: string) => {
       const sections = [];
       const sectionRegex = /###\s+\*\*([\d]+\.\s+[\w\s]+)\*\*/g;
       const contentBlocks = text.split(sectionRegex);

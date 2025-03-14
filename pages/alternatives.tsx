@@ -76,11 +76,12 @@ export default function GoogleJobsSearch() {
     setLoading(false);
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
   };
+  
 
   return (
     <Layout>

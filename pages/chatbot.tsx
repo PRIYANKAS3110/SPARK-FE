@@ -1,65 +1,88 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Typography,
   Paper,
-  TextField,
   Button,
   CircularProgress,
   Avatar,
   List,
   ListItem,
   ListItemAvatar,
-  ListItemText
-} from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import PersonIcon from '@mui/icons-material/Person';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
-import Layout from '../components/Layout';
+  ListItemText,
+} from "@mui/material";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import SmartToyIcon from "@mui/icons-material/SmartToy";
+import Layout from "../components/Layout";
 
-interface ChatMessage {
-  sender: 'user' | 'bot';
-  text: string;
-}
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export default function JobChatbotPage() {
-  const [jobTitle, setJobTitle] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [file, setFile] = useState<File | null>(null);
+  const [messages, setMessages] = useState<{ sender: "user" | "bot"; text: string }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSendMessage = async () => {
-    if (!jobTitle.trim()) return;
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      setFile(event.target.files[0]);
+      setError("");
+    }
+  };
 
-    // Add user message
-    const newUserMessage: ChatMessage = { sender: 'user', text: jobTitle };
-    setMessages((prev) => [...prev, newUserMessage]);
-    setJobTitle('');
-    setLoading(true);
-
-    try {
-      const res = await fetch(`${BACKEND_URL}/chatbot/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ job_title: jobTitle }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        const newBotMessage: ChatMessage = { sender: 'bot', text: data.response };
-        setMessages((prev) => [...prev, newBotMessage]);
-      } else {
-        const errorMessage: ChatMessage = { sender: 'bot', text: data.error || 'Failed to generate response.' };
-        setMessages((prev) => [...prev, errorMessage]);
-      }
-    } catch (err) {
-      const errorMessage: ChatMessage = { sender: 'bot', text: 'Error connecting to the backend.' };
-      setMessages((prev) => [...prev, errorMessage]);
+  const handleUpload = async () => {
+    if (!file) {
+      setError("Please select a resume file (PDF) before uploading.");
+      return;
     }
 
-    setLoading(false);
+    const formData = new FormData();
+    formData.append("resume", file);
+
+    // Add user message
+    setMessages((prev) => [...prev, { sender: "user", text: `Uploaded: ${file.name}` }]);
+    setFile(null);
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/chatbot/upload-resume`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      setLoading(false);
+
+      if (response.ok) {
+        let parsedRoles = [];
+
+        try {
+          // ✅ Ensure JSON response is clean
+          const cleanedJson = data.suggested_roles.replace(/```json\n|\n```/g, "");
+          const parsedData = JSON.parse(cleanedJson);
+
+          parsedRoles = Array.isArray(parsedData.suggested_roles) ? parsedData.suggested_roles : [];
+        } catch (err) {
+          console.error("Error parsing job roles:", err);
+        }
+
+        if (parsedRoles.length > 0) {
+          setMessages((prev) => [
+            ...prev,
+            { sender: "bot", text: `Here are your recommended job roles:\n\n- ${parsedRoles.join("\n- ")}` },
+          ]);
+        } else {
+          setMessages((prev) => [...prev, { sender: "bot", text: "No job recommendations found." }]);
+        }
+      } else {
+        setError(data.error || "Failed to fetch job recommendations.");
+      }
+    } catch (err) {
+      setLoading(false);
+      setError("Error connecting to the backend.");
+    }
   };
 
   return (
@@ -69,17 +92,20 @@ export default function JobChatbotPage() {
           AI Career Chatbot
         </Typography>
         <Typography variant="body1" paragraph>
-          Ask about a job role and get AI-generated career insights!
+          Upload your resume and get AI-generated job recommendations!
         </Typography>
       </Paper>
 
-      <Box sx={{ maxHeight: '50vh', overflowY: 'auto', mb: 3 }}>
+      <Box sx={{ maxHeight: "50vh", overflowY: "auto", mb: 3 }}>
         <List>
           {messages.map((msg, index) => (
-            <ListItem key={index} sx={{ display: 'flex', justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start' }}>
-              {msg.sender === 'bot' && (
+            <ListItem
+              key={index}
+              sx={{ display: "flex", justifyContent: msg.sender === "user" ? "flex-end" : "flex-start" }}
+            >
+              {msg.sender === "bot" && (
                 <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: '#673ab7' }}>
+                  <Avatar sx={{ bgcolor: "#673ab7" }}>
                     <SmartToyIcon />
                   </Avatar>
                 </ListItemAvatar>
@@ -87,37 +113,43 @@ export default function JobChatbotPage() {
               <ListItemText
                 primary={msg.text}
                 sx={{
-                  backgroundColor: msg.sender === 'user' ? '#e3f2fd' : '#f3e5f5',
+                  backgroundColor: msg.sender === "user" ? "#e3f2fd" : "#f3e5f5",
                   p: 1.5,
-                  borderRadius: '10px',
-                  maxWidth: '80%',
-                  whiteSpace: 'pre-line',
+                  borderRadius: "10px",
+                  maxWidth: "80%",
+                  whiteSpace: "pre-line",
                 }}
               />
-              {msg.sender === 'user' && (
-                <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: '#1976d2' }}>
-                    <PersonIcon />
-                  </Avatar>
-                </ListItemAvatar>
-              )}
             </ListItem>
           ))}
         </List>
       </Box>
 
-      <Box display="flex" alignItems="center" gap={2}>
-        <TextField
-          fullWidth
-          label="Ask about a job role..."
-          variant="outlined"
-          value={jobTitle}
-          onChange={(e) => setJobTitle(e.target.value)}
-          disabled={loading}
+      <Box display="flex" alignItems="center" gap={2} sx={{ flexDirection: "column" }}>
+        <input
+          type="file"
+          accept=".pdf"
+          onChange={handleFileChange}
+          style={{ display: "none" }}
+          id="resume-upload"
         />
-        <Button variant="contained" color="primary" onClick={handleSendMessage} disabled={loading || !jobTitle.trim()}>
-          {loading ? <CircularProgress size={24} /> : <SendIcon />}
+        <label htmlFor="resume-upload">
+          <Button variant="contained" component="span" startIcon={<CloudUploadIcon />}>
+            {file ? file.name : "Choose Resume (PDF)"}
+          </Button>
+        </label>
+
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleUpload}
+          disabled={loading || !file}
+          startIcon={loading ? <CircularProgress size={20} /> : <InsertDriveFileIcon />}
+        >
+          {loading ? "Uploading..." : "Upload & Get Jobs"}
         </Button>
+
+        {error && <Typography color="error">{error}</Typography>}
       </Box>
     </Layout>
   );
